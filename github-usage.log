@@ -1,0 +1,15 @@
+
+# Copy from github repository startup page
+
+# create new one
+echo "# MyEnv" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git remote add origin https://github.com/xzhong86/MyEnv.git
+git push -u origin master
+
+# push existing one
+git remote add origin https://github.com/xzhong86/MyEnv.git
+git push -u origin master
+
