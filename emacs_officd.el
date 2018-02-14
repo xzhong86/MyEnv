@@ -1,4 +1,5 @@
 
+
 ;; CUA mode in emacs23
 (cua-mode 1)
 ;(ido-mode 1)
@@ -94,14 +95,14 @@
 (define-key global-map [C-S-f3] 'isearch-backward-regexp)
 
 ;; Kill buffer/emacs
-(global-set-key [C-f4] 'kill-this-buffer)
+;(global-set-key [C-f4] 'kill-this-buffer)
 
 ;; Go to line
 (global-set-key [f5] 'goto-line)
 
 ;; Switch windows/buffers
-(global-set-key [f6] 'other-window)
-(global-set-key [S-f6] 'buffer-menu)
+;(global-set-key [f6] 'other-window)
+;(global-set-key [S-f6] 'buffer-menu)
 
 ;; for HideShow Mode
 (global-set-key [f7] 'hs-toggle-hiding)
@@ -143,6 +144,9 @@
                            query-replace-to-history-variable nil t))
                  (list to)))
   (perform-replace (get-register t) to-string nil nil nil))
+
+(global-unset-key [C-prior])
+(global-unset-key [C-next])
 
 ;; Key others
 ;; Mouse operation
@@ -207,6 +211,9 @@
 
 ;; show paren {} [] ()
 (show-paren-mode 0)
+
+;;(setq read-file-name-completion-ignore-case t)
+(setq read-buffer-completion-ignore-case t)
 
 (global-set-key [M-up]  'previous-buffer)
 (global-set-key [M-down] 'next-buffer)
