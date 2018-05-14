@@ -2,7 +2,7 @@
 
 ;; CUA mode in emacs23
 (cua-mode 1)
-;(ido-mode 1)
+;;(ido-mode 1)
 (require 'cmake-mode)
 
 ;; No too many #*, *~ files
@@ -86,7 +86,15 @@
 ;; Key Binding
 ;; =================================================================
 
+;; unset up/down/right/left
+(global-unset-key "\C-p") ;; up
+(global-unset-key "\C-n") ;; down
+(global-unset-key "\C-f") ;; right
+(global-unset-key "\C-b") ;; left
+
 ;; Set the word search keys
+(global-set-key "\C-f" 'isearch-forward)
+(define-key isearch-mode-map "\C-f" 'isearch-repeat-forward)
 (define-key global-map [f3] 'isearch-forward)
 (define-key isearch-mode-map [f3] 'isearch-repeat-forward)
 (define-key global-map [C-f3] 'isearch-forward-regexp)
@@ -101,8 +109,8 @@
 (global-set-key [f5] 'goto-line)
 
 ;; Switch windows/buffers
-;(global-set-key [f6] 'other-window)
-;(global-set-key [S-f6] 'buffer-menu)
+(global-set-key [f6] 'other-window)
+(global-set-key [S-f6] 'buffer-menu)
 
 ;; for HideShow Mode
 (global-set-key [f7] 'hs-toggle-hiding)
@@ -123,12 +131,12 @@
 
 (defun query-replace-reg-t (to-string)
   (interactive (let (to)
-                 (setq to (read-from-minibuffer
-                           (format "Query-replace \"%s\" with: "
-                                   (get-register t))
-                           nil nil nil
-                           query-replace-to-history-variable nil t))
-                 (list to)))
+		 (setq to (read-from-minibuffer
+			   (format "Query-replace \"%s\" with: "
+				   (get-register t))
+			   nil nil nil
+			   query-replace-to-history-variable nil t))
+		 (list to)))
   (perform-replace (get-register t) to-string t nil nil))
 
 (global-set-key [f10] 'replace-string)
@@ -137,16 +145,16 @@
 
 (defun replace-string-reg-t (to-string)
   (interactive (let (to)
-                 (setq to (read-from-minibuffer
-                           (format "Replace \"%s\" with: "
-                                   (get-register t))
-                           nil nil nil
-                           query-replace-to-history-variable nil t))
-                 (list to)))
+		 (setq to (read-from-minibuffer
+			   (format "Replace \"%s\" with: "
+				   (get-register t))
+			   nil nil nil
+			   query-replace-to-history-variable nil t))
+		 (list to)))
   (perform-replace (get-register t) to-string nil nil nil))
 
-(global-unset-key [C-prior])
-(global-unset-key [C-next])
+(global-unset-key [C-prior]) ;; unmap Ctrl + PageUp
+(global-unset-key [C-next])  ;; unmap Ctrl + PageDown
 
 ;; Key others
 ;; Mouse operation
@@ -165,31 +173,73 @@
         ((looking-at "\\s\)") (forward-char 1) (backward-list 1))
         (t (self-insert-command (or arg 1)))))
 
+(load "~/.emacs.d/goto-last-change.el")
+(global-set-key "\C-b" 'goto-last-change)
+
 ;; Key in special mode
 ;; Search previour/next issued commend (in shell mode)
 (add-hook 'shell-mode-hook
-          '(lambda ()
-             (define-key shell-mode-map [C-tab]
-               'comint-previous-matching-input-from-input)
-             (define-key shell-mode-map [C-S-kp-tab]
-               'comint-next-matching-input-from-input)))
+	  '(lambda ()
+	     (define-key shell-mode-map [C-tab]
+	       'comint-previous-matching-input-from-input)
+	     (define-key shell-mode-map [C-S-kp-tab]
+	       'comint-next-matching-input-from-input)))
 
 ;; Define/remap key in eshell mode
 (add-hook 'eshell-mode-hook
-          '(lambda ()
-             (define-key eshell-mode-map [C-tab]
-               'eshell-previous-matching-input-from-input)
-             (define-key eshell-mode-map [C-S-kp-tab]
-               'eshell-next-matching-input-from-input)
-             (define-key eshell-mode-map [up] 'previous-line)
-             (define-key eshell-mode-map [down] 'next-line)
-             ))
+	  '(lambda ()
+	     (define-key eshell-mode-map [C-tab]
+	       'eshell-previous-matching-input-from-input)
+	     (define-key eshell-mode-map [C-S-kp-tab]
+	       'eshell-next-matching-input-from-input)
+	     (define-key eshell-mode-map [up] 'previous-line)
+	     (define-key eshell-mode-map [down] 'next-line)
+	     ))
 
+;; copy from cua package
+(defalias 'copy-rectangle-text 'cua-copy-rectangle-as-text-spc)
+(defun cua-copy-rectangle-as-text-spc (&optional arg delete)
+  "Copy rectangle, but store as normal text."
+  (interactive "P")
+  (if cua--global-mark-active
+      (if delete
+          (cua--cut-rectangle-to-global-mark t)
+        (cua--copy-rectangle-to-global-mark t))
+    (let* ((rect (cua--extract-rectangle))
+           (text (mapconcat
+                  (function (lambda (row) (concat row " ")))
+                  rect "")))
+      (setq arg (cua--prefix-arg arg))
+      (if cua--register
+          (set-register cua--register text)
+        (kill-new text)))
+    (if delete
+        (cua--delete-rectangle))
+    (cua--deactivate)))
+
+(global-set-key (kbd "M-g j") 'jump-to-file-and-line)
+(defun jump-to-file-and-line ()
+  "Reads a line in the form FILENAME:LINE and, assuming a
+relative path, opens that file in another window and jumps to the
+line."
+  (interactive)
+  (let ((line (buffer-substring-no-properties (point-at-bol) (point-at-eol))))
+    (string-match "\\(.*\\):\\([0-9]+\\)" line)
+    (let ((file (match-string 1 line))
+          (lnum (match-string 2 line)))
+      (when (and file (file-exists-p (concat default-directory file)))
+        (find-file-other-window (concat default-directory file))
+        (and lnum (goto-line (string-to-number lnum)))))))
+
+(defun goto-percent (percent)
+  "Goto PERCENT of buffer."
+  (interactive "nGoto percent:")
+  (goto-char (/ (* percent (point-max)) 100)))
 
 ;; =================================================================
 ;; zpzhong special
 ;; =================================================================
-;(add-hook 'c-mode-hook '(lambda() (c-set-style "k&r")))
+;;(add-hook 'c-mode-hook '(lambda() (c-set-style "k&r")))
 (add-hook 'c-mode-hook '(lambda() (c-set-style "linux")))
 (add-hook 'c++-mode-hook '(lambda() (c-set-style "cc-mode")
                             (c-set-offset 'innamespace 0)))
@@ -198,25 +248,27 @@
   (interactive)
   (insert "\t"))
 (add-hook 'c-mode-hook
-          '(lambda ()
-             (define-key c-mode-map [C-tab] 'insert-tab-force)))
+	  '(lambda ()
+	     (define-key c-mode-map [C-tab] 'insert-tab-force)))
 
 (defun insert-pointer-access ()
   "Insert a ->"
   (interactive)
   (insert "->"))
 (add-hook 'c-mode-hook
-          '(lambda ()
-             (define-key c-mode-map [?\C->] 'insert-pointer-access)))
+	  '(lambda ()
+	     (define-key c-mode-map [?\C->] 'insert-pointer-access)))
 
 ;; show paren {} [] ()
 (show-paren-mode 0)
+;; auto insert pair mode
+(electric-pair-mode t)
 
-;;(setq read-file-name-completion-ignore-case t)
+;;(setq completion-ignore-case t)
 (setq read-buffer-completion-ignore-case t)
 
-(global-set-key [M-up]  'previous-buffer)
-(global-set-key [M-down] 'next-buffer)
+(global-set-key [M-up]  'previous-buffer) 
+(global-set-key [M-down] 'next-buffer) 
 
 ;; Add color to a shell running in emacs 'M-x shell'
 (autoload 'ansi-color-for-comint-mode-on "ansi-color" nil t)

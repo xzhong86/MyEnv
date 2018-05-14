@@ -345,3 +345,4 @@ This is used by `comint-watch-for-password-prompt'."
 ;; =================================================================
 
 ;(load "~/.l_emacs" t t t)
+(put 'scroll-left 'disabled nil)
