@@ -1,7 +1,14 @@
 
-set nocompatible
-set backspace=indent,eol,start
+set incsearch
 set hlsearch
+
 set expandtab
 syntax on
 colorscheme darkblue
+
+set autochdir
+
+set autoindent
+"set cindent
+
+set tabstop=4
